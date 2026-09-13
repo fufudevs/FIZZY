@@ -31,52 +31,50 @@
     --d-tier: #ACAA98;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html, body{ overflow-x:hidden; width:100%; max-width:100%; touch-action:pan-y; }
+  
+  html, body{ 
+    overflow-x:hidden; 
+    width:100%; 
+    max-width:100%; 
+  }
+  
   body{ margin:0; background:var(--paper); color:var(--ink); font-family:'Inter', sans-serif; -webkit-font-smoothing:antialiased; }
   h1,h2,h3, .display{ font-family:'Fraunces', serif; font-weight:700; margin:0; }
   #app{ max-width:640px; margin:0 auto; min-height:100vh; background:var(--paper); position:relative; }
 
-  /* Smooth Slidin' Elements */
+  /* Normal Flow for Header with specific z-index for Parallax */
   .header-container {
     padding: 0;
     background: var(--paper);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    z-index: 3;
+    will-change: transform;
   }
   
   .sticky-settings {
-    position: sticky;
-    top: 0;
-    z-index: 20;
+    position: relative;
+    z-index: 2;
     padding: 9px 12px 9px 12px;
-    background: rgba(241, 239, 228, 0.94);
+    background: rgba(241, 239, 228, 0.98);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 4px 16px rgba(46,58,36,0.08);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .header-hidden {
-    transform: translateY(-110%);
-  }
-
-  .settings-hidden {
-    transform: translateY(-150%);
+    will-change: transform;
   }
 
   /* Header im zweithellsten Grünton mit Gradient */
   header.top{
-    position:relative; overflow:hidden; z-index:2;
+    position:relative; overflow:hidden; z-index:1;
     height:120px; padding:20px; color:#2E3A24;
     background: linear-gradient(180deg, #8AA173 0%, #667c50 100%);
     border-radius: 0 0 20px 20px;
     display: flex; flex-direction: column; justify-content: center;
     box-shadow: 0 4px 12px rgba(46,58,36,0.12);
   }
-  /*header.top .title-waves{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1; pointer-events:none; }*/
   header.top .title-waves {
-  display: none !important;
+    display: none !important;
   }
-  header.top .head-text{ position:relative; z-index:2; max-width:88%; }
+  header.top .head-text{ position:relative; z-index:1; max-width:88%; }
   header.top h1{ font-size:30px; letter-spacing:-0.01em; line-height: 1; color: #F1EFE4; text-shadow: 0 1px 2px rgba(255,255,255,0.2); }
   header.top p{ margin:4px 0 0; color:#F1EFE4; font-size:12.5px; font-weight: 500; opacity: 0.9; }
 
@@ -106,7 +104,8 @@
   }
   nav.tabs button.active{ color:#fff; background: linear-gradient(180deg, var(--moss) 0%, #3F5030 100%); box-shadow: 0 2px 6px rgba(75,93,58,0.3); }
 
-  main{ padding:14px 16px 100px; position:relative; z-index:2; }
+  /* Main hat einen festen Hintergrund und z-index 3, damit es sich sanft über die Parallax-Teile schiebt */
+  main{ padding:14px 16px 100px; position:relative; z-index:3; background: var(--paper); }
 
   .card{ background:var(--paper-raised); border-radius:18px; padding:16px; margin-bottom:14px; box-shadow:0 4px 14px rgba(46,58,36,0.07); }
 
@@ -705,7 +704,6 @@ function enableDragAndMouseScroll(slider){
     slider.scrollLeft = scrollLeft - walk;
   });
 
-  // Mausrad horizontal durch die Tags scrollen lassen
   slider.addEventListener('wheel', (e) => {
     if (e.deltaY !== 0) {
       e.preventDefault();
@@ -1279,7 +1277,6 @@ function buildGroovyWaves(){
   if(!svg) return;
   const W = 400, H = 120;
 
-  // Erzeugt eine schicke geschwungene Wellenkante oben, die nach unten hin flach komplett ausgefüllt ist
   let d = `M -20 130 L -20 38`;
   for (let x = -20; x <= W + 20; x += 15) {
     const yWave = 38 + Math.sin((x / (W * 1.05)) * Math.PI) * 28;
@@ -1287,55 +1284,55 @@ function buildGroovyWaves(){
   }
   d += ` L ${W + 20} 130 Z`;
 
-  // Nutzung des tieferen Moosgrüns (--moss) als gefüllter Wellenblock über dem helleren Header
   svg.innerHTML = `
     <path d="${d}" fill="var(--moss)" opacity="0.95"></path>
   `;
 }
 buildGroovyWaves();
 
-/* ---------- Intelligentes Overlay Scroll-Verhalten ---------- */
+/* ---------- Minimal Parallax & Scroll-Verhalten ---------- */
 (function(){
   const headerContainer = document.getElementById('headerContainer');
   const stickySettings = document.getElementById('stickySettings');
   const scrollTopBtn = document.getElementById('scrollTopBtn');
   
-  let lastY = window.scrollY || 0;
-
   window.addEventListener('scroll', ()=>{
-    const currentY = window.scrollY || 0;
-    const isScrollingUp = currentY < lastY;
+    const y = window.scrollY || 0;
 
-    // 1. Zurück nach oben Button
-    if (currentY > 180) {
+    if (y > 180) {
       scrollTopBtn.classList.add('visible');
     } else {
       scrollTopBtn.classList.remove('visible');
     }
 
-    // 2. Title Header Card
-    if (currentY <= 10) {
-      headerContainer.classList.remove('header-hidden');
-    } else {
-      headerContainer.classList.add('header-hidden');
+    if (headerContainer) {
+      headerContainer.style.transform = `translateY(${y * -0.2}px)`;
     }
-
-    // 3. Settings Overlay (Verschwindet beim Runterscrollen, taucht beim Hochscrollen Überall auf)
-    if (currentY <= 10) {
-      stickySettings.classList.remove('settings-hidden');
-    } else if (isScrollingUp) {
-      stickySettings.classList.remove('settings-hidden');
-    } else {
-      stickySettings.classList.add('settings-hidden');
+    
+    if (stickySettings) {
+      stickySettings.style.transform = `translateY(${y * -0.05}px)`;
     }
-
-    lastY = currentY;
+    
   }, { passive: true });
 
   scrollTopBtn.onclick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 })();
+
+// Prevent overscroll only at the top, leaving normal scrolling and bottom bounce intact
+let touchStartY = 0;
+window.addEventListener('touchstart', e => {
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+window.addEventListener('touchmove', e => {
+  const touchY = e.touches[0].clientY;
+  const currentScroll = window.scrollY || window.pageYOffset;
+  if (currentScroll <= 0 && touchY > touchStartY) {
+    e.preventDefault();
+  }
+}, { passive: false });
 
 loadData();
 </script>

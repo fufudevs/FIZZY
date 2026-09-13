@@ -1,0 +1,20 @@
+{
+  "name": "FIZZY - Das Spaßgetränke-Journal",
+  "short_name": "FIZZY",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#4B5D3A",
+  "theme_color": "#8AA173",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

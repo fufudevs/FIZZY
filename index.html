@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>FIZZY</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --moss: #4B5D3A;
+    --moss-dark: #2E3A24;
+    --moss-light: #8AA173;
+    --moss-pale: #C7D4B4;
+    --paper: #F1EFE4;
+    --paper-raised: #F8F6EC;
+    --ink: #262B1F;
+    --ink-soft: #6B7460;
+    --rust: #C77B3E;
+    --line: #D3D1BE;
+    --gold: #C9A227;
+    --danger: #A4432E;
+    --s-tier: #C77B3E;
+    --a-tier: #C9A227;
+    --b-tier: #4B5D3A;
+    --c-tier: #7C8B72;
+    --d-tier: #ACAA98;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html, body{ overflow-x:hidden; width:100%; max-width:100%; touch-action:pan-y; }
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:'Inter', sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3, .display{ font-family:'Fraunces', serif; font-weight:700; margin:0; }
+  #app{ max-width:640px; margin:0 auto; min-height:100vh; background:var(--paper); position:relative; }
+
+  /* Smooth Slidin' Elements Setup */
+  .header-container {
+    padding: 0;
+    background: var(--paper);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  .sticky-settings {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 8px 12px 8px 12px;
+    background: rgba(241, 239, 228, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 16px rgba(46,58,36,0.08);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .header-hidden {
+    transform: translateY(-110%);
+  }
+
+  .settings-hidden {
+    transform: translateY(-150%);
+  }
+
+  /* Header im zweithellsten Grünton mit Gradient */
+  header.top{
+    position:relative; overflow:hidden; z-index:2;
+    height:120px; padding:20px; color:#2E3A24;
+    background: linear-gradient(135deg, #8AA173 0%, #667c50 100%);
+    border-radius: 0 0 20px 20px;
+    display: flex; flex-direction: column; justify-content: center;
+    box-shadow: 0 4px 12px rgba(46,58,36,0.12);
+  }
+  /*header.top .title-waves{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1; pointer-events:none; }*/
+  header.top .title-waves {
+  display: none !important;
+  }
+  header.top .head-text{ position:relative; z-index:2; max-width:88%; }
+  header.top h1{ font-size:30px; letter-spacing:-0.01em; line-height: 1; color: #F1EFE4; text-shadow: 0 1px 2px rgba(255,255,255,0.2); }
+  header.top p{ margin:4px 0 0; color:#F1EFE4; font-size:12.5px; font-weight: 500; opacity: 0.9; }
+
+  /* Back to top Button */
+  .top-btn {
+    position: fixed; top: 12px; left: 16px; z-index: 30;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--paper-raised); border: 1.5px solid var(--line);
+    color: var(--ink); font-size: 16px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    opacity: 0; pointer-events: none;
+  }
+  .top-btn.visible { opacity: 1; pointer-events: auto; }
+  .top-btn:active { transform: scale(0.92); }
+
+  nav.tabs{
+    display:flex; margin:0 0 6px; background:var(--paper-raised); border-radius:14px;
+    padding:4px; z-index:5; box-shadow:0 2px 8px rgba(46,58,36,0.06);
+  }
+  nav.tabs button{
+    flex:1; padding:8px 4px; background:none; border:none;
+    font-family:'Inter', sans-serif; font-weight:600; font-size:13px;
+    color:var(--ink-soft); cursor:pointer; border-radius:10px;
+    transition: all 0.2s ease;
+  }
+  nav.tabs button.active{ color:#fff; background: linear-gradient(180deg, var(--moss) 0%, #3F5030 100%); box-shadow: 0 2px 6px rgba(75,93,58,0.3); }
+
+  main{ padding:14px 16px 100px; position:relative; z-index:2; }
+
+  .card{ background:var(--paper-raised); border-radius:18px; padding:16px; margin-bottom:14px; box-shadow:0 4px 14px rgba(46,58,36,0.07); }
+
+  .field{ margin-bottom:11px; }
+  .field label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:4px; }
+  .field input[type=text], .field textarea{
+    width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px;
+    background:#fff; font-family:inherit; font-size:16px; color:var(--ink); resize:vertical;
+  }
+  .field textarea{ min-height:54px; font-family:inherit; }
+  .field input:focus, .field textarea:focus{ outline:none; border-color:var(--moss); }
+
+  .field-row-top{ display:flex; align-items:flex-start; gap:12px; margin-bottom:11px; }
+  .photo-mini{ display:flex; flex-direction:column; align-items:center; gap:5px; flex-shrink:0; width:62px; }
+  .photo-mini .btn{ width:100%; padding:5px 4px; font-size:9.5px; letter-spacing:0.01em; white-space:normal; line-height:1.2; }
+  .field-row-top .name-field{ flex:1; min-width:0; margin-bottom:0; }
+
+  .photo-picker{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .photo-thumb{ width:62px; height:62px; border-radius:14px; object-fit:cover; border:1.5px solid var(--line); background:#fff; }
+  .photo-placeholder{
+    width:62px; height:62px; border-radius:14px; border:1.5px dashed var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--ink-soft); background:#fff;
+  }
+
+  .btn{
+    font-family:'Inter', sans-serif; font-weight:600; font-size:13.5px;
+    padding:11px 18px; border-radius:999px; border:none;
+    background: linear-gradient(180deg, var(--moss) 0%, #3E4E2F 100%);
+    color:#fff; cursor:pointer; box-shadow: 0 3px 8px rgba(75,93,58,0.25);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .btn:active{ transform: scale(0.98); }
+  .btn.secondary{ background:#fff; color:var(--ink); border:1.5px solid var(--line); box-shadow:0 2px 5px rgba(0,0,0,0.03); }
+  .btn.small{ padding:7px 13px; font-size:12px; }
+  .btn.danger{ background: linear-gradient(180deg, var(--danger) 0%, #883523 100%); color:#fff; box-shadow: 0 3px 8px rgba(164,67,46,0.25); }
+  .btn:disabled{ opacity: 0.6; cursor: not-allowed; }
+
+  input[type=file]{ display:none; }
+
+  .chip{
+    font-size:12.5px; padding:7px 13px; border-radius:20px; border:1.5px solid var(--moss);
+    color:var(--moss); background:#fff; cursor:pointer; user-select:none; white-space:nowrap; flex-shrink:0;
+    transition: all 0.15s ease;
+  }
+  .chip.selected{ background:var(--moss); color:#fff; }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+
+  .plus-add{ display:inline-flex; align-items:center; gap:8px; }
+  .plus-btn{
+    width:34px; height:34px; border-radius:12px; border:1.5px dashed var(--ink-soft);
+    background:#fff; color:var(--ink-soft); font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .plus-add.open .plus-btn{ display:none; }
+  .plus-add input[type=text]{
+    display:none; padding:9px 12px; border:1.5px solid var(--moss); border-radius:12px; font-size:15px;
+    background:#fff; width:170px;
+  }
+  .plus-add.open input[type=text]{ display:block; }
+
+  .star-block{ margin-bottom:10px; }
+  .star-block .row-top{ display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:4px; }
+  .star-block .row-top .catname{ color:var(--ink); }
+  .star-block .row-top .val{ color:var(--moss); font-weight:700; }
+  .star-input{ display:inline-flex; gap:3px; line-height:1; cursor:pointer; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .star-input.readonly{ cursor:default; }
+  .star-cell{ position:relative; display:inline-block; font-size:28px; width:1em; height:1em; }
+  .star-cell svg{ display:block; width:100%; height:100%; }
+
+  .dropdown{ position:relative; flex-shrink:0; }
+  .dropdown-trigger{
+    display:flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px;
+    background:var(--paper-raised); border:1.5px solid var(--line); font-size:12.5px; font-weight:600;
+    color:var(--ink); cursor:pointer; white-space:nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+  }
+  .dropdown-trigger .chev{ font-size:10px; color:var(--ink-soft); }
+  .dropdown-panel{
+    position:absolute; top:calc(100% + 6px); left:0; background:var(--paper-raised); border-radius:14px;
+    box-shadow:0 8px 24px rgba(46,58,36,0.18); padding:6px; min-width:190px; z-index:30; display:none;
+  }
+  .dropdown-panel.open{ display:block; }
+  .dropdown-option{ padding:8px 12px; border-radius:999px; font-size:13px; cursor:pointer; }
+  .dropdown-option:hover{ background:var(--paper); }
+  .dropdown-option.active{ color:var(--moss); font-weight:700; }
+
+  .tagbar-row{ display:flex; align-items:center; gap:8px; }
+  .tagbar-scroll{ 
+    display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; flex:1;
+    scrollbar-width: none; -ms-overflow-style: none; cursor: grab; user-select: none;
+  }
+  .tagbar-scroll::-webkit-scrollbar { display: none; }
+  .tagbar-scroll:active { cursor: grabbing; }
+  .chip.clear-all{ border-color:var(--danger); color:var(--danger); }
+  .chip.clear-all.active{ background:var(--danger); color:#fff; }
+
+  .drink-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; position:relative; }
+  
+  /* Drink Cards mit subtilem Edelschatten */
+  .drink-card{
+    background: linear-gradient(180deg, #FFFFFF 0%, var(--paper-raised) 100%);
+    border-radius:18px; overflow:hidden; cursor:pointer;
+    border: 1px solid rgba(211, 209, 190, 0.5);
+    box-shadow: 0 4px 12px rgba(46,58,36,0.08), 0 1px 3px rgba(0,0,0,0.04);
+    display:flex; min-height:136px;
+    position:relative; z-index:2; transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .drink-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(46,58,36,0.12), 0 2px 4px rgba(0,0,0,0.04);
+  }
+  .drink-card .meta{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; }
+  .drink-card .photo-wrap{ position:relative; width:38%; min-width:64px; flex-shrink:0; }
+  .drink-card .photo-wrap > img,
+  .drink-card .photo-wrap > .no-img{
+    position:absolute; inset:0; width:100%; height:100%; display:block; object-fit:cover;
+  }
+  .drink-card .photo-wrap > .no-img{ display:flex; align-items:center; justify-content:center; background:#DCE2CC; font-size:28px; }
+  .drink-card .body{
+    flex:1; min-width:0; padding:10px 12px 10px 12px;
+    display:flex; flex-direction:column; justify-content:space-between; gap:4px;
+  }
+  .drink-card .name{ font-family:'Fraunces'; font-weight:700; font-size:14.5px; line-height:1.25; }
+  .drink-card .rating .star-input{ gap:1px; }
+  .drink-card .rating .star-cell{ font-size:14px; }
+  
+  .drink-count-overlay{
+    display:flex; align-items:center; justify-flex-start; gap:5px; margin-top:2px;
+  }
+  .drink-count-overlay button{
+    width:22px; height:22px; border:0; border-radius:50%; background:var(--moss);
+    color:#fff; font:700 13px/1 Inter,sans-serif; display:flex; align-items:center;
+    justify-content:center; cursor:pointer; flex-shrink:0; box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  }
+  .drink-count-overlay .count{
+    min-width:16px; text-align:center; font:700 12px/1 Inter,sans-serif; color:var(--ink);
+  }
+
+  /* Stamp Flying Animation for newly added drink */
+  .stamp-entry {
+    animation: stampFlyIn 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+    box-shadow: 0 18px 36px rgba(0,0,0,0.25);
+    z-index: 5;
+  }
+  @keyframes stampFlyIn {
+    0% { transform: scale(2.4) translateY(-90px) rotate(-10deg); opacity: 0; }
+    100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+  }
+
+  /* Staubwolken-Blasen unter dem Stempel-Aufprall */
+  .landing-dust-bubble {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #C7D4B4, #8AA173);
+    pointer-events: none; z-index: 1; opacity: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    animation: dustPop 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  @keyframes dustPop {
+    0% { transform: translate(0, 0) scale(0.2); opacity: 0.95; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(1.6); opacity: 0; }
+  }
+
+  .detail-title-row{ display:flex; align-items:flex-start; gap:12px; }
+  .detail-title-row h2{ flex:1; min-width:0; }
+  .detail-title-rating{ flex-shrink:0; padding-top:2px; }
+  .detail-tags{ display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 12px; }
+  .detail-counter-row{ display:flex; align-items:center; justify-space-between; padding:0 0 14px; }
+  .detail-counter-label{ font-size:13.5px; color:var(--ink-soft); }
+  .detail-spacer{ height:12px; }
+  .detail-subcats{ padding-top:2px; }
+  .detail-subcat-row{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); }
+  .detail-subcat-row:last-child{ border-bottom:none; }
+  .detail-subcat-row .k{ color:var(--ink-soft); font-size:13.5px; }
+  .detail-first-date{ margin-top:22px; padding-top:12px; border-top:1px solid var(--line); color:var(--ink-soft); font-size:12px; }
+
+  .empty{ text-align:center; padding:40px 20px; color:var(--ink-soft); }
+  .empty .display{ font-size:20px; margin-bottom:8px; color:var(--ink); }
+
+  .tier-row{ display:flex; border-radius:16px; margin-bottom:10px; overflow:hidden; min-height:74px; box-shadow:0 3px 10px rgba(46,58,36,0.06); }
+  .tier-label{ width:52px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:'Fraunces'; font-weight:700; font-size:20px; color:#fff; }
+  .tier-items{ flex:1; display:flex; flex-wrap:wrap; gap:8px; padding:8px; background:var(--paper-raised); align-items:center; }
+  .tier-chip{ display:flex; align-items:center; gap:6px; background:#fff; border-radius:12px; padding:4px 10px 4px 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+  .tier-chip img{ width:32px; height:32px; border-radius:999px; object-fit:cover; }
+  .tier-chip .no-img-sm{ width:32px; height:32px; border-radius:999px; background:#DCE2CC; display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .tier-chip span{ font-size:12.5px; font-weight:600; }
+  .tier-empty{ font-size:12px; color:var(--ink-soft); font-style:italic; padding:4px; }
+
+  .view-controls{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .filter-bar{ flex:1; min-width:0; }
+  .view-toggle{ display:flex; flex-shrink:0; padding:3px; background:var(--paper-raised); border:1.5px solid var(--line); border-radius:999px; }
+  .view-toggle button{ border:0; background:none; color:var(--ink-soft); font:600 11.5px Inter,sans-serif; padding:6px 10px; border-radius:999px; cursor:pointer; }
+  .view-toggle button.active{ background:var(--moss); color:#fff; }
+  .tier-caption{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin:2px 0 10px; color:var(--ink); }
+  .tier-caption span{ font-size:11.5px; color:var(--ink-soft); }
+  .manage-bottom-btn{
+    width:100%; margin-top:2px; padding:12px 16px; border-radius:14px;
+    border:1.5px solid var(--moss-light); background:var(--moss-pale); color:var(--moss-dark);
+    font:600 13px Inter,sans-serif; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .stat-box{ background:var(--paper-raised); border-radius:16px; padding:16px; box-shadow:0 3px 10px rgba(46,58,36,0.06); }
+  .stat-box .num{ font-family:'Fraunces'; font-weight:700; font-size:30px; color:var(--moss); }
+  .stat-box .label{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .bar-row{ margin-bottom:10px; }
+  .bar-row .bar-top{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:3px; }
+  .bar-track{ height:8px; background:#E3E0D0; border-radius:4px; overflow:hidden; }
+  .bar-fill{ height:100%; background:var(--rust); border-radius:4px; }
+
+  .top3-row{ display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); }
+  .top3-row:last-child{ border-bottom:none; }
+  .top3-rank{ font-family:'Fraunces'; font-weight:700; font-size:18px; color:var(--moss); width:22px; }
+  .top3-row img{ width:38px; height:38px; border-radius:10px; object-fit:cover; }
+  .top3-row .no-img-sm{ width:38px; height:38px; border-radius:10px; background:#DCE2CC; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .top3-row .name{ font-weight:600; font-size:13.5px; flex:1; }
+  .top3-row .count{ font-size:12.5px; color:var(--ink-soft); }
+
+  .manage-section-title{ font-size:12.5px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:10px; }
+  .manage-list{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .manage-chip{ display:flex; align-items:center; gap:6px; background:#fff; border:1.5px solid var(--line); border-radius:20px; padding:6px 8px 6px 14px; font-size:13px; }
+  .manage-chip button{ background:none; border:none; color:var(--danger); font-size:15px; cursor:pointer; padding:0; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(38,43,31,0.6); backdrop-filter: blur(4px); z-index:40; display:flex; align-items:flex-end; justify-content:center; }
+  .sheet{ background:var(--paper); width:100%; max-width:640px; max-height:88vh; overflow-y:auto; border-radius:22px 22px 0 0; padding:18px; box-shadow: 0 -8px 30px rgba(0,0,0,0.2); }
+  .sheet-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+  .sheet img.hero{ width:100%; height:180px; object-fit:cover; border-radius:16px; margin-bottom:14px; }
+  .close-x{ background:none; border:none; font-size:22px; cursor:pointer; color:var(--ink-soft); line-height:1; }
+
+  .confirm-box{ background:var(--paper-raised); border-radius:18px; padding:18px; max-width:340px; margin:auto; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+  .confirm-box p{ font-size:14px; line-height:1.5; margin:0 0 16px; }
+  .confirm-actions{ display:flex; gap:10px; }
+  .confirm-actions .btn{ flex:1; }
+
+  .fab{
+    position:fixed; bottom:20px; right:50%; transform:translateX(320px);
+    background: linear-gradient(135deg, var(--rust) 0%, #A86027 100%);
+    color:#fff; border:none; border-radius:50%;
+    width:56px; height:56px; font-size:26px; cursor:pointer;
+    box-shadow:0 6px 18px rgba(199,123,62,0.4); z-index:20;
+    transition: transform 0.15s ease;
+  }
+  .fab:active{ transform:translateX(320px) scale(0.92); }
+  @media (max-width:680px){
+    .fab{ right:20px; transform:none; }
+    .fab:active{ transform:scale(0.92); }
+  }
+
+  /* Dichte Blasenwelle Screen Transition */
+  .bubble-transition-overlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 100;
+    overflow: hidden;
+  }
+  .screen-wave-bubble {
+    position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #DCE6CC, #8AA173);
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.6), 0 4px 12px rgba(46,58,36,0.15);
+    animation: screenWaveRise 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  @keyframes screenWaveRise {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    15% { opacity: 0.92; }
+    85% { opacity: 0.92; }
+    100% { transform: translateY(-120vh) scale(1.5); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <button class="top-btn" id="scrollTopBtn" aria-label="Zurück nach oben">↑</button>
+
+  <div class="header-container" id="headerContainer">
+    <header class="top">
+      <svg class="title-waves" id="titleWaves" viewBox="0 0 400 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+      <div class="head-text">
+        <h1>FIZZY</h1>
+        <p>Das Spaßgetränke-Ranking-Journal</p>
+      </div>
+    </header>
+  </div>
+
+  <div class="sticky-settings" id="stickySettings">
+    <nav class="tabs">
+      <button data-tab="log" class="active">Journal</button>
+      <button data-tab="stats">Stats</button>
+    </nav>
+    <div id="settingsBarContent"></div>
+  </div>
+
+  <main id="main"></main>
+  <button class="fab" id="fabAdd">+</button>
+</div>
+
+<script>
+
+/* ---------- Storage-Weiche ---------- */
+const memoryFallback = {};
+let persistenceWarningShown = false;
+function flagNoPersistence(){
+  if(persistenceWarningShown) return;
+  persistenceWarningShown = true;
+  console.warn('Kein persistenter Speicher verfügbar — nur für diese Sitzung.');
+}
+const storageAdapter = {
+  async get(key){
+    if(typeof window.storage !== 'undefined' && window.storage){
+      try{ const r = await window.storage.get(key); return r ? r.value : null; } catch(e){}
+    }
+    try{ return localStorage.getItem(key); } catch(e){}
+    flagNoPersistence();
+    return memoryFallback[key] || null;
+  },
+  async set(key, value){
+    if(typeof window.storage !== 'undefined' && window.storage){
+      try{ await window.storage.set(key, value); return; } catch(e){}
+    }
+    try{ localStorage.setItem(key, value); return; } catch(e){}
+    flagNoPersistence();
+    memoryFallback[key] = value;
+  }
+};
+
+const STORAGE_KEY = 'drinks';
+const CATEGORY_KEY = 'custom-categories';
+const TAG_KEY = 'all-tags';
+
+let drinks = [];
+let categories = [];
+let tagsList = [];
+let activeTab = 'log';
+let filterTags = [];
+let sortBy = 'rating-desc';
+let journalView = 'list';
+let pendingPhoto = null;
+let openDropdownEl = null;
+let newlyAddedDrinkId = null;
+
+const main = document.getElementById('main');
+
+async function loadData(){
+  const d = await storageAdapter.get(STORAGE_KEY);
+  drinks = d ? JSON.parse(d) : [];
+  drinks.forEach(dr => {
+    if(typeof dr.count !== 'number') dr.count = 1;
+    if(!dr.dateAdded) dr.dateAdded = Date.now();
+    if(!dr.firstDrunkAt) dr.firstDrunkAt = dr.dateAdded;
+  });
+  const c = await storageAdapter.get(CATEGORY_KEY);
+  categories = c ? JSON.parse(c) : ['Durststillend','Süß','Belebend'];
+  const t = await storageAdapter.get(TAG_KEY);
+  tagsList = t ? JSON.parse(t) : ['Fizzy','Süß','Erfrischend'];
+  if(!d){
+    drinks = [{
+      id: uid(), name:'Fizzy-Drink',
+      tags:['Fizzy','Süß','Erfrischend'],
+      overall:4, custom:{Durststillend:4,Süß:4.5,Belebend:3.5},
+      photo:null, notes:'', count:1, dateAdded:Date.now()
+    }];
+    await saveDrinks();
+  }
+  render();
+}
+async function saveDrinks(){ await storageAdapter.set(STORAGE_KEY, JSON.stringify(drinks)); }
+async function saveCategories(){ await storageAdapter.set(CATEGORY_KEY, JSON.stringify(categories)); }
+async function saveTags(){ await storageAdapter.set(TAG_KEY, JSON.stringify(tagsList)); }
+
+function uid(){ return 'd' + Date.now() + Math.floor(Math.random()*1000); }
+function esc(s){ return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function allTags(){
+  const s = new Set(tagsList);
+  drinks.forEach(d => (d.tags||[]).forEach(t => s.add(t)));
+  return Array.from(s).sort();
+}
+
+function tierFor(r){
+  if(r>=4.5) return 'S';
+  if(r>=3.5) return 'A';
+  if(r>=2.5) return 'B';
+  if(r>=1.5) return 'C';
+  return 'D';
+}
+const tierColors = { S:'var(--s-tier)', A:'var(--a-tier)', B:'var(--b-tier)', C:'var(--c-tier)', D:'var(--d-tier)' };
+
+/* ---------- Stern-Widget ---------- */
+const STAR_PATH = "M12 2L14.09 8.26L20.9 8.27L15.4 12.14L17.45 18.4L12 14.5L6.55 18.4L8.6 12.14L3.1 8.27L9.91 8.26Z";
+let starClipCounter = 0;
+function starCellFill(value, index){ return Math.max(0, Math.min(1, value - index)); }
+function starCellSvg(fraction){
+  starClipCounter++;
+  const clipId = 'starclip-' + starClipCounter;
+  const width = (fraction * 24).toFixed(2);
+  return `<svg viewBox="0 0 24 24">
+    <defs><clipPath id="${clipId}"><rect x="0" y="0" width="${width}" height="24"/></clipPath></defs>
+    <path d="${STAR_PATH}" fill="#D9D6C4"/>
+    <path d="${STAR_PATH}" fill="var(--gold)" clip-path="url(#${clipId})"/>
+  </svg>`;
+}
+function renderStarCells(container, value){
+  container.innerHTML = Array.from({length:5}).map((_,i)=>
+    `<span class="star-cell" data-idx="${i}">${starCellSvg(starCellFill(value,i))}</span>`
+  ).join('');
+}
+function makeStarInput(container, initialValue, onChange, readonly){
+  container.classList.add('star-input');
+  if(readonly) container.classList.add('readonly');
+  let value = initialValue;
+  renderStarCells(container, value);
+  if(readonly) return { get: ()=>value };
+
+  function valueFromClientX(clientX){
+    const cells = container.querySelectorAll('.star-cell');
+    if(!cells.length) return value;
+    const first = cells[0].getBoundingClientRect();
+    const last = cells[cells.length-1].getBoundingClientRect();
+    if(clientX <= first.left) return 0.5;
+    if(clientX >= last.right) return 5;
+    for(const cell of cells){
+      const rect = cell.getBoundingClientRect();
+      if(clientX >= rect.left && clientX <= rect.right){
+        const idx = parseInt(cell.dataset.idx);
+        const fraction = (clientX - rect.left) / rect.width;
+        return fraction < 0.5 ? idx + 0.5 : idx + 1;
+      }
+    }
+    return value;
+  }
+  function applyFromClientX(clientX){
+    const v = valueFromClientX(clientX);
+    if(v !== value){
+      value = v;
+      renderStarCells(container, value);
+      onChange(value);
+    }
+  }
+
+  let dragging = false;
+  container.addEventListener('pointerdown', e=>{
+    dragging = true;
+    try{ container.setPointerCapture(e.pointerId); }catch(err){}
+    applyFromClientX(e.clientX);
+    e.preventDefault();
+  });
+  container.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    applyFromClientX(e.clientX);
+  });
+  function stopDrag(){ dragging = false; }
+  container.addEventListener('pointerup', stopDrag);
+  container.addEventListener('pointercancel', stopDrag);
+
+  return { get: ()=>value };
+}
+
+/* ---------- Bestätigungs-Dialog ---------- */
+function confirmModal(message, confirmLabel, onConfirm){
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `<div class="confirm-box"><p>${message}</p>
+    <div class="confirm-actions">
+      <button class="btn secondary" id="cAbort">Abbrechen</button>
+      <button class="btn danger" id="cOk">${esc(confirmLabel)}</button>
+    </div></div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#cAbort').onclick = ()=> overlay.remove();
+  overlay.querySelector('#cOk').onclick = ()=>{ overlay.remove(); onConfirm(); };
+}
+
+/* ---------- Custom Dropdown ---------- */
+function closeOpenDropdown(){
+  if(openDropdownEl){ openDropdownEl.querySelector('.dropdown-panel').classList.remove('open'); openDropdownEl = null; }
+}
+document.addEventListener('click', e=>{
+  if(openDropdownEl && !openDropdownEl.contains(e.target)) closeOpenDropdown();
+});
+function createDropdown(options, currentValue, onSelect){
+  const wrap = document.createElement('div');
+  wrap.className = 'dropdown';
+  const current = options.find(o=>o.value===currentValue) || options[0];
+  wrap.innerHTML = `
+    <div class="dropdown-trigger"><span class="dd-label">${esc(current.label)}</span><span class="chev">▾</span></div>
+    <div class="dropdown-panel">
+      ${options.map(o=>`<div class="dropdown-option ${o.value===currentValue?'active':''}" data-val="${esc(o.value)}">${esc(o.label)}</div>`).join('')}
+    </div>
+  `;
+  const trigger = wrap.querySelector('.dropdown-trigger');
+  const panel = wrap.querySelector('.dropdown-panel');
+  trigger.onclick = e=>{
+    e.stopPropagation();
+    const willOpen = !panel.classList.contains('open');
+    closeOpenDropdown();
+    if(willOpen){ panel.classList.add('open'); openDropdownEl = wrap; }
+  };
+  wrap.querySelectorAll('.dropdown-option').forEach(opt=>{
+    opt.onclick = e=>{
+      e.stopPropagation();
+      wrap.querySelectorAll('.dropdown-option').forEach(o=>o.classList.remove('active'));
+      opt.classList.add('active');
+      wrap.querySelector('.dd-label').textContent = opt.textContent;
+      closeOpenDropdown();
+      onSelect(opt.dataset.val);
+    };
+  });
+  return wrap;
+}
+
+/* ---------- Dichte Bubble Screen Transition ---------- */
+function triggerScreenBubbleWave(onMidpointCallback){
+  const overlay = document.createElement('div');
+  overlay.className = 'bubble-transition-overlay';
+  document.body.appendChild(overlay);
+
+  const bubbleCount = 75;
+  for(let i=0; i<bubbleCount; i++){
+    const b = document.createElement('div');
+    b.className = 'screen-wave-bubble';
+    const size = 26 + Math.random()*70;
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    b.style.left = (Math.random()*104 - 2) + 'vw';
+    b.style.animationDelay = (Math.random()*0.38) + 's';
+    b.style.opacity = (0.5 + Math.random()*0.45).toFixed(2);
+    overlay.appendChild(b);
+  }
+
+  setTimeout(() => {
+    if(onMidpointCallback) onMidpointCallback();
+  }, 480);
+
+  setTimeout(() => {
+    overlay.remove();
+  }, 1300);
+}
+
+function spawnLandingDust(cardElement){
+  const parent = cardElement.parentElement;
+  if(!parent) return;
+
+  const bubbleCount = 18;
+  for(let i=0; i<bubbleCount; i++){
+    const dust = document.createElement('div');
+    dust.className = 'landing-dust-bubble';
+    const size = 8 + Math.random()*18;
+    dust.style.width = size + 'px';
+    dust.style.height = size + 'px';
+    
+    const originX = cardElement.offsetLeft + cardElement.offsetWidth/2;
+    const originY = cardElement.offsetTop + cardElement.offsetHeight/2;
+    
+    dust.style.left = originX + 'px';
+    dust.style.top = originY + 'px';
+
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 50 + Math.random()*85;
+    const dx = Math.cos(angle) * distance;
+    const dy = Math.sin(angle) * distance;
+
+    dust.style.setProperty('--dx', dx + 'px');
+    dust.style.setProperty('--dy', dy + 'px');
+
+    parent.insertBefore(dust, cardElement);
+    setTimeout(() => dust.remove(), 700);
+  }
+}
+
+function render(){
+  renderSettingsBar();
+  if(activeTab==='log') renderLog();
+  else renderStats();
+}
+
+function sortOptions(){
+  return [
+    {value:'rating-desc', label:'Beste zuerst'},
+    {value:'rating-asc', label:'Schlechteste zuerst'},
+    {value:'count-desc', label:'Am häufigsten getrunken'},
+    {value:'recent', label:'Zuletzt hinzugefügt'},
+    {value:'name', label:'Name A–Z'},
+    ...categories.map(c=>({value:'cat:'+c, label:'Nach „'+c+'“'}))
+  ];
+}
+
+function enableDragAndMouseScroll(slider){
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+
+  slider.addEventListener('mousedown', (e) => {
+    isDown = true;
+    startX = e.pageX - slider.offsetLeft;
+    scrollLeft = slider.scrollLeft;
+  });
+  slider.addEventListener('mouseleave', () => { isDown = false; });
+  slider.addEventListener('mouseup', () => { isDown = false; });
+  slider.addEventListener('mousemove', (e) => {
+    if(!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - slider.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    slider.scrollLeft = scrollLeft - walk;
+  });
+
+  // Mausrad horizontal durch die Tags scrollen lassen
+  slider.addEventListener('wheel', (e) => {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      slider.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+}
+
+function renderSettingsBar(){
+  const container = document.getElementById('settingsBarContent');
+  if(!container) return;
+  
+  if(activeTab !== 'log'){
+    container.innerHTML = '';
+    return;
+  }
+
+  const tags = allTags();
+  container.innerHTML = `
+    <div class="view-controls">
+      <div class="filter-bar" id="ddSlot"></div>
+      <div class="view-toggle" aria-label="Ansichtsmodus">
+        <button class="${journalView==='list'?'active':''}" data-view="list">Karten</button>
+        <button class="${journalView==='tier'?'active':''}" data-view="tier">Tierlist</button>
+      </div>
+    </div>
+    <div class="tagbar-row">
+      <div class="tagbar-scroll" id="tagScroll">
+        <div class="chip clear-all ${filterTags.length===0?'':'active'}" id="clearTagsChip">Alle zurücksetzen</div>
+        ${tags.map(t=>`<div class="chip ${filterTags.includes(t)?'selected':''}" data-tag="${esc(t)}">${esc(t)}</div>`).join('')}
+      </div>
+    </div>
+  `;
+
+  const ddSlot = container.querySelector('#ddSlot');
+  if(ddSlot){
+    ddSlot.appendChild(createDropdown(sortOptions(), sortBy, val=>{ sortBy = val; render(); }));
+  }
+
+  container.querySelectorAll('.view-toggle button').forEach(btn=>{
+    btn.onclick=()=>{ journalView=btn.dataset.view; render(); };
+  });
+
+  const tagScrollEl = container.querySelector('#tagScroll');
+  if(tagScrollEl) enableDragAndMouseScroll(tagScrollEl);
+
+  const clearBtn = container.querySelector('#clearTagsChip');
+  if(clearBtn) clearBtn.onclick = ()=>{ filterTags = []; render(); };
+
+  container.querySelectorAll('#tagScroll .chip[data-tag]').forEach(c=>{
+    c.onclick = ()=>{
+      const t = c.dataset.tag;
+      if(filterTags.includes(t)) filterTags = filterTags.filter(x=>x!==t);
+      else filterTags.push(t);
+      render();
+    };
+  });
+}
+
+function renderLog(){
+  let list = drinks.slice();
+  if(filterTags.length>0) list = list.filter(d => filterTags.every(t => (d.tags||[]).includes(t)));
+
+  if(sortBy==='rating-desc') list.sort((a,b)=>b.overall-a.overall);
+  else if(sortBy==='rating-asc') list.sort((a,b)=>a.overall-b.overall);
+  else if(sortBy==='count-desc') list.sort((a,b)=>(b.count||0)-(a.count||0));
+  else if(sortBy==='name') list.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(sortBy==='recent') list.sort((a,b)=>b.dateAdded-a.dateAdded);
+  else if(sortBy.startsWith('cat:')){
+    const cat = sortBy.slice(4);
+    list.sort((a,b)=> ((b.custom&&b.custom[cat])||0) - ((a.custom&&a.custom[cat])||0));
+  }
+
+  main.innerHTML = journalView==='tier' ? tierHtml(list) :
+    (list.length===0 ? `<div class="empty"><div class="display">Noch nichts gefunden</div>Keine Getränke passen zu deinen Filtern.</div>` :
+    `<div class="drink-grid">${list.map(cardHtml).join('')}</div>`);
+
+  main.querySelectorAll('.drink-card').forEach(el=>{
+    el.onclick = () => openDetail(el.dataset.id);
+    const starEl = el.querySelector('.rating .star-input');
+    if(starEl) makeStarInput(starEl, drinks.find(d=>d.id===el.dataset.id).overall, ()=>{}, true);
+
+    if(el.dataset.id === newlyAddedDrinkId){
+      el.classList.add('stamp-entry');
+      setTimeout(() => {
+        spawnLandingDust(el);
+      }, 260);
+      setTimeout(() => {
+        el.classList.remove('stamp-entry');
+        newlyAddedDrinkId = null;
+      }, 650);
+    }
+
+    const counter = el.querySelector('.drink-count-overlay');
+    if(counter){
+      counter.onclick = e => e.stopPropagation();
+      counter.querySelector('.count-minus').onclick = async e => {
+        e.stopPropagation();
+        const d = drinks.find(x=>x.id===el.dataset.id);
+        if(!d) return;
+        d.count = Math.max(0, (d.count||0) - 1);
+        counter.querySelector('.count').textContent = d.count;
+        await saveDrinks();
+      };
+      counter.querySelector('.count-plus').onclick = async e => {
+        e.stopPropagation();
+        const d = drinks.find(x=>x.id===el.dataset.id);
+        if(!d) return;
+        d.count = (d.count||0) + 1;
+        await saveDrinks();
+        counter.querySelector('.count').textContent = d.count;
+      };
+    }
+  });
+  main.querySelectorAll('.tier-chip').forEach(el=>{ el.onclick=()=>openDetail(el.dataset.id); });
+}
+
+function tierHtml(list){
+  const order=['S','A','B','C','D'];
+  const groups={S:[],A:[],B:[],C:[],D:[]};
+  list.forEach(d=>groups[tierFor(d.overall)].push(d));
+  return `
+    <div class="tier-caption">
+      <strong>Tierlist-Ansicht</strong>
+      <span>${filterTags.length ? 'Gefilterte Getränke' : 'Alle Getränke'} · ${list.length}</span>
+    </div>
+    ${order.map(t=>`
+      <div class="tier-row">
+        <div class="tier-label" style="background:${tierColors[t]}">${t}</div>
+        <div class="tier-items">
+          ${groups[t].length ? groups[t].map(d=>`
+            <div class="tier-chip" data-id="${d.id}">
+              ${d.photo?`<img src="${d.photo}">`:`<div class="no-img-sm">🥤</div>`}
+              <span>${esc(d.name)}</span>
+            </div>`).join('') : `<div class="tier-empty">Noch leer</div>`}
+        </div>
+      </div>`).join('')}
+  `;
+}
+
+function cardHtml(d){
+  return `
+    <div class="drink-card" data-id="${d.id}">
+      <div class="photo-wrap">
+        ${d.photo ? `<img src="${d.photo}">` : `<div class="no-img">🥤</div>`}
+      </div>
+      <div class="body">
+        <div>
+          <div class="name">${esc(d.name)}</div>
+          <div class="rating"><span class="star-input"></span></div>
+        </div>
+        <div class="drink-count-overlay" data-count-id="${d.id}">
+          <button class="count-minus" aria-label="Ein Getränk weniger">−</button>
+          <span class="count">${d.count||0}</span>
+          <button class="count-plus" aria-label="Ein Getränk mehr">+</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderStats(){
+  const total = drinks.length;
+  const totalDrunk = drinks.reduce((s,d)=>s+(d.count||0),0);
+  const avg = total ? (drinks.reduce((s,d)=>s+d.overall,0)/total).toFixed(1) : '—';
+  const tagCounts = {};
+  drinks.forEach(d => (d.tags||[]).forEach(t => tagCounts[t]=(tagCounts[t]||0)+1));
+  const topTags = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxTagCount = topTags.length ? topTags[0][1] : 1;
+  const top3 = drinks.slice().sort((a,b)=>(b.count||0)-(a.count||0)).slice(0,3);
+
+  main.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-box"><div class="num">${total}</div><div class="label">Getränke probiert</div></div>
+      <div class="stat-box"><div class="num">${totalDrunk}</div><div class="label">Insgesamt getrunken</div></div>
+      <div class="stat-box"><div class="num">${avg}</div><div class="label">Ø Bewertung</div></div>
+      <div class="stat-box"><div class="num">${Object.keys(tagCounts).length}</div><div class="label">Tags genutzt</div></div>
+    </div>
+    <div class="card">
+      <strong>Top 3 — am häufigsten getrunken</strong>
+      <div style="margin-top:8px;">
+        ${top3.length===0 ? `<div style="font-size:13px;color:var(--ink-soft);">Noch keine Daten.</div>` :
+          top3.map((d,i)=>`
+            <div class="top3-row">
+              <div class="top3-rank">${i+1}</div>
+              ${d.photo?`<img src="${d.photo}">`:`<div class="no-img-sm">🥤</div>`}
+              <div class="name">${esc(d.name)}</div>
+              <div class="count">${d.count||0}×</div>
+            </div>
+          `).join('')}
+      </div>
+    </div>
+    <div class="card"><strong>Top Tags</strong><div style="margin-top:8px;">
+      ${topTags.length===0 ? `<div style="font-size:13px;color:var(--ink-soft);">Füge Tags zu deinen Getränken hinzu.</div>` :
+        topTags.map(([t,c])=>`<div class="bar-row"><div class="bar-top"><span>${esc(t)}</span><span>${c}</span></div><div class="bar-track"><div class="bar-fill" style="width:${(c/maxTagCount*100)}%;"></div></div></div>`).join('')}
+    </div></div>
+    <button class="manage-bottom-btn" id="openManage">⚙️ Kategorien &amp; Tags verwalten</button>
+  `;
+  main.querySelector('#openManage').onclick = openManageModal;
+}
+
+/* ---------- Verwalten-Popup ---------- */
+function openManageModal(){
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `
+    <div class="sheet">
+      <div class="sheet-header"><h2 class="display">Verwalten</h2><button class="close-x" id="closeManage">✕</button></div>
+      <div class="card">
+        <div class="manage-section-title">Bewertungskategorien</div>
+        <div class="manage-list" id="catList"></div>
+        <div class="plus-add" id="catAdd">
+          <button class="plus-btn">+</button>
+          <input type="text" placeholder="Neue Kategorie + Enter">
+        </div>
+      </div>
+      <div class="card">
+        <div class="manage-section-title">Tags</div>
+        <div class="manage-list" id="tagList"></div>
+        <div class="plus-add" id="tagAdd">
+          <button class="plus-btn">+</button>
+          <input type="text" placeholder="Neuer Tag + Enter">
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#closeManage').onclick = ()=> overlay.remove();
+
+  function renderCatList(){
+    overlay.querySelector('#catList').innerHTML = categories.map(c=>`<div class="manage-chip">${esc(c)}<button data-cat="${esc(c)}">✕</button></div>`).join('') || `<div style="font-size:13px;color:var(--ink-soft);">Noch keine Kategorien.</div>`;
+    overlay.querySelectorAll('#catList button').forEach(btn=>{
+      btn.onclick = ()=>{
+        const cat = btn.dataset.cat;
+        confirmModal(`Kategorie „${esc(cat)}" wirklich löschen? Bestehende Bewertungen dafür gehen bei allen Getränken verloren.`, 'Löschen', async ()=>{
+          categories = categories.filter(x=>x!==cat);
+          drinks.forEach(d=>{ if(d.custom) delete d.custom[cat]; });
+          await saveCategories(); await saveDrinks();
+          renderCatList();
+        });
+      };
+    });
+  }
+  function renderTagList(){
+    overlay.querySelector('#tagList').innerHTML = allTags().map(t=>`<div class="manage-chip">${esc(t)}<button data-tag="${esc(t)}">✕</button></div>`).join('') || `<div style="font-size:13px;color:var(--ink-soft);">Noch keine Tags.</div>`;
+    overlay.querySelectorAll('#tagList button').forEach(btn=>{
+      btn.onclick = ()=>{
+        const tag = btn.dataset.tag;
+        confirmModal(`Tag „${esc(tag)}" wirklich löschen? Er wird von allen Getränken entfernt.`, 'Löschen', async ()=>{
+          tagsList = tagsList.filter(x=>x!==tag);
+          drinks.forEach(d=>{ if(d.tags) d.tags = d.tags.filter(x=>x!==tag); });
+          filterTags = filterTags.filter(x=>x!==tag);
+          await saveTags(); await saveDrinks();
+          renderTagList();
+        });
+      };
+    });
+  }
+  renderCatList(); renderTagList();
+
+  function wirePlusAdd(root, id, onSubmit){
+    const wrap = root.querySelector('#'+id);
+    const btn = wrap.querySelector('.plus-btn');
+    const input = wrap.querySelector('input');
+    btn.onclick = ()=>{ wrap.classList.add('open'); input.focus(); };
+    input.addEventListener('keypress', async e=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        const v = input.value.trim();
+        if(v){ await onSubmit(v); }
+        input.value=''; wrap.classList.remove('open');
+      }
+    });
+    input.addEventListener('blur', ()=>{ if(!input.value) wrap.classList.remove('open'); });
+  }
+  wirePlusAdd(overlay, 'catAdd', async v=>{ if(!categories.includes(v)){ categories.push(v); await saveCategories(); renderCatList(); } });
+  wirePlusAdd(overlay, 'tagAdd', async v=>{ if(!tagsList.includes(v)){ tagsList.push(v); await saveTags(); renderTagList(); } });
+}
+
+/* ---------- Getränk hinzufügen / bearbeiten ---------- */
+function openAddForm(existingDrink){
+  const isEdit = !!existingDrink;
+  pendingPhoto = isEdit ? existingDrink.photo : null;
+  let isSaving = false;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `
+    <div class="sheet">
+      <div class="sheet-header">
+        <h2 class="display">${isEdit ? 'Getränk bearbeiten' : 'Getränk loggen'}</h2>
+        <button class="close-x" id="closeAdd">✕</button>
+      </div>
+      <div class="field-row-top">
+        <div class="photo-mini">
+          <div id="photoPreview" class="${pendingPhoto ? '' : 'photo-placeholder'}">${pendingPhoto ? '' : '🥤'}</div>
+          <button class="btn secondary small" id="pickPhotoBtn">Foto</button>
+          <input type="file" id="photoInput" accept="image/*">
+        </div>
+        <div class="field name-field"><label>Name</label><input type="text" id="drinkName" placeholder="z.B. Fizzy-Drink" value="${isEdit ? esc(existingDrink.name) : ''}"></div>
+      </div>
+      <div class="field">
+        <label>Tags</label>
+        <div class="chip-row" id="tagRow"></div>
+      </div>
+      <div class="star-block">
+        <div class="row-top"><span class="catname">Gesamtbewertung</span><span class="val" id="overallVal">${(isEdit?existingDrink.overall:3).toFixed(1)}</span></div>
+        <span class="star-input" id="overallStars"></span>
+      </div>
+      <div id="customStars"></div>
+      <div class="field" style="margin-top:6px;">
+        <div class="plus-add" id="catAddInline">
+          <button class="plus-btn">+</button>
+          <input type="text" placeholder="Neue Kategorie + Enter">
+        </div>
+      </div>
+      <div class="field">
+        <label>Notiz (optional)</label>
+        <textarea id="drinkNotes" placeholder="Was gibt es noch zu diesem Drink zu wissen?">${isEdit ? esc(existingDrink.notes||'') : ''}</textarea>
+      </div>
+      <button class="btn" id="saveDrinkBtn" style="width:100%;margin-top:8px;">${isEdit ? 'Änderungen speichern' : 'Getränk speichern'}</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  if(isEdit && pendingPhoto){
+    overlay.querySelector('#photoPreview').outerHTML = `<img class="photo-thumb" id="photoPreview" src="${pendingPhoto}">`;
+  }
+
+  let selectedTags = isEdit ? (existingDrink.tags||[]).slice() : [];
+  const tagRow = overlay.querySelector('#tagRow');
+  function renderTagChips(){
+    const chipList = allTags();
+    tagRow.innerHTML = chipList.map(t=>`<div class="chip ${selectedTags.includes(t)?'selected':''}" data-tag="${esc(t)}">${esc(t)}</div>`).join('');
+    tagRow.querySelectorAll('.chip').forEach(c=>{
+      c.onclick = ()=>{
+        const t = c.dataset.tag;
+        if(selectedTags.includes(t)) selectedTags = selectedTags.filter(x=>x!==t);
+        else selectedTags.push(t);
+        renderTagChips();
+      };
+    });
+    const plusAdd = document.createElement('div');
+    plusAdd.className = 'plus-add';
+    plusAdd.id = 'tagAddInline';
+    plusAdd.innerHTML = `<button class="plus-btn" type="button">+</button><input type="text" placeholder="Neuer Tag + Enter">`;
+    tagRow.appendChild(plusAdd);
+    const btn = plusAdd.querySelector('.plus-btn');
+    const input = plusAdd.querySelector('input');
+    btn.onclick = ()=>{ plusAdd.classList.add('open'); input.focus(); };
+    input.addEventListener('keypress', async e=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        const v = input.value.trim();
+        if(v){
+          if(!tagsList.includes(v)) tagsList.push(v);
+          if(!selectedTags.includes(v)) selectedTags.push(v);
+          await saveTags();
+        }
+        renderTagChips();
+      }
+    });
+    input.addEventListener('blur', ()=>{ if(!input.value) plusAdd.classList.remove('open'); });
+  }
+  renderTagChips();
+
+  const overallCtrl = makeStarInput(overlay.querySelector('#overallStars'), isEdit ? existingDrink.overall : 3, v=>{
+    overlay.querySelector('#overallVal').textContent = v.toFixed(1);
+  }, false);
+
+  const customCtrls = {};
+  const customLiveValues = {};
+  function currentValueFor(c){
+    if(Object.prototype.hasOwnProperty.call(customLiveValues, c)) return customLiveValues[c];
+    return (isEdit && existingDrink.custom && existingDrink.custom[c]) || 3;
+  }
+  const wrap = overlay.querySelector('#customStars');
+  function renderCustomStars(){
+    wrap.innerHTML = categories.map(c=>`
+      <div class="star-block">
+        <div class="row-top"><span class="catname">${esc(c)}</span><span class="val" data-valfor="${esc(c)}">${currentValueFor(c).toFixed(1)}</span></div>
+        <span class="star-input" data-starfor="${esc(c)}"></span>
+      </div>
+    `).join('');
+    categories.forEach(c=>{
+      const el = wrap.querySelector(`[data-starfor="${CSS.escape(c)}"]`);
+      const initial = currentValueFor(c);
+      customCtrls[c] = makeStarInput(el, initial, v=>{
+        customLiveValues[c] = v;
+        wrap.querySelector(`[data-valfor="${CSS.escape(c)}"]`).textContent = v.toFixed(1);
+      }, false);
+    });
+  }
+  renderCustomStars();
+
+  const catAddInline = overlay.querySelector('#catAddInline');
+  const catBtn = catAddInline.querySelector('.plus-btn');
+  const catInput = catAddInline.querySelector('input');
+  catBtn.onclick = ()=>{ catAddInline.classList.add('open'); catInput.focus(); };
+  catInput.addEventListener('keypress', async e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      const v = catInput.value.trim();
+      if(v && !categories.includes(v)){ categories.push(v); await saveCategories(); renderCustomStars(); }
+      catInput.value=''; catAddInline.classList.remove('open');
+    }
+  });
+  catInput.addEventListener('blur', ()=>{ if(!catInput.value) catAddInline.classList.remove('open'); });
+
+  overlay.querySelector('#pickPhotoBtn').onclick = ()=> overlay.querySelector('#photoInput').click();
+  overlay.querySelector('#photoInput').onchange = e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      pendingPhoto = ev.target.result;
+      overlay.querySelector('#photoPreview').outerHTML = `<img class="photo-thumb" id="photoPreview" src="${pendingPhoto}">`;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  overlay.querySelector('#closeAdd').onclick = ()=> overlay.remove();
+  
+  const saveBtn = overlay.querySelector('#saveDrinkBtn');
+  saveBtn.onclick = async ()=>{
+    if(isSaving) return;
+    
+    const name = overlay.querySelector('#drinkName').value.trim();
+    if(!name){ overlay.querySelector('#drinkName').style.borderColor = 'var(--danger)'; return; }
+    
+    isSaving = true;
+    saveBtn.disabled = true;
+    saveBtn.innerText = "Speichern...";
+
+    const custom = {};
+    categories.forEach(c => custom[c] = customCtrls[c] ? customCtrls[c].get() : 3);
+    const notes = overlay.querySelector('#drinkNotes').value.trim();
+    
+    let targetId = null;
+    if(isEdit){
+      existingDrink.name = name;
+      existingDrink.tags = selectedTags;
+      existingDrink.overall = overallCtrl.get();
+      existingDrink.custom = custom;
+      existingDrink.photo = pendingPhoto;
+      existingDrink.notes = notes;
+      targetId = existingDrink.id;
+    } else {
+      targetId = uid();
+      drinks.push({
+        id: targetId, name, tags: selectedTags, overall: overallCtrl.get(), custom,
+        photo: pendingPhoto, notes, count: 1, dateAdded: Date.now(), firstDrunkAt: Date.now()
+      });
+      newlyAddedDrinkId = targetId;
+    }
+    await saveDrinks();
+
+    if(!isEdit){
+      triggerScreenBubbleWave(() => {
+        overlay.remove();
+        activeTab = 'log';
+        setActiveTabUI();
+        render();
+      });
+    } else {
+      overlay.remove();
+      activeTab = 'log';
+      setActiveTabUI();
+      render();
+    }
+  };
+}
+
+function formatDate(ts){
+  if(!ts) return '—';
+  return new Intl.DateTimeFormat('de-DE', {day:'2-digit', month:'2-digit', year:'numeric'}).format(new Date(ts));
+}
+
+function openDetail(id){
+  const d = drinks.find(x=>x.id===id);
+  if(!d) return;
+  if(!d.firstDrunkAt) d.firstDrunkAt = d.dateAdded || Date.now();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `
+    <div class="sheet">
+      <div class="sheet-header" style="margin-bottom:10px;">
+        <div class="detail-title-row">
+          <h2 class="display">${esc(d.name)}</h2>
+          <div class="detail-title-rating"><span class="star-input" id="detOverall"></span></div>
+        </div>
+        <button class="close-x" id="closeDetail">✕</button>
+      </div>
+
+      ${d.photo ? `<img class="hero" src="${d.photo}">` : ''}
+
+      <div class="detail-tags">
+        ${(d.tags||[]).map(t=>`<span class="chip selected">${esc(t)}</span>`).join('')}
+      </div>
+
+      <div class="detail-counter-row">
+        <span class="detail-counter-label">Getrunken</span>
+        <div class="count-control">
+          <button class="count-btn" id="countMinus" aria-label="Ein Getränk weniger">−</button>
+          <span class="count-val" id="countVal">${d.count||0}</span>
+          <button class="count-btn" id="countPlus" aria-label="Ein Getränk mehr">+</button>
+        </div>
+      </div>
+
+      <div class="detail-spacer"></div>
+
+      <div class="detail-subcats">
+        ${Object.entries(d.custom||{}).map(([k,v])=>`
+          <div class="detail-subcat-row">
+            <span class="k">${esc(k)}</span>
+            <span class="star-input" data-detstar="${esc(k)}"></span>
+          </div>
+        `).join('')}
+      </div>
+
+      ${d.notes ? `<div class="notes-block">${esc(d.notes)}</div>` : ''}
+
+      <div class="detail-first-date">Erstmals getrunken am: ${formatDate(d.firstDrunkAt)}</div>
+
+      <div class="detail-actions">
+        <button class="btn secondary" id="editDrink">Bearbeiten</button>
+        <button class="btn danger" id="deleteDrink">Löschen</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  makeStarInput(overlay.querySelector('#detOverall'), d.overall, ()=>{}, true);
+
+  const custWrap = overlay.querySelector('.detail-subcats');
+  Object.entries(d.custom||{}).forEach(([k,v])=>{
+    const el = custWrap.querySelector(`[data-detstar="${CSS.escape(k)}"]`);
+    if(el) makeStarInput(el, v, ()=>{}, true);
+  });
+
+  overlay.querySelector('#countMinus').onclick = async ()=>{
+    d.count = Math.max(0, (d.count||0) - 1);
+    overlay.querySelector('#countVal').textContent = d.count;
+    await saveDrinks();
+  };
+  overlay.querySelector('#countPlus').onclick = async ()=>{
+    d.count = (d.count||0) + 1;
+    await saveDrinks();
+    overlay.querySelector('#countVal').textContent = d.count;
+  };
+
+  overlay.querySelector('#closeDetail').onclick = ()=>{ overlay.remove(); render(); };
+  overlay.querySelector('#editDrink').onclick = ()=>{ overlay.remove(); openAddForm(d); };
+  overlay.querySelector('#deleteDrink').onclick = ()=>{
+    confirmModal(`„${esc(d.name)}" wirklich endgültig löschen?`, 'Löschen', async ()=>{
+      drinks = drinks.filter(x=>x.id!==id);
+      await saveDrinks();
+      overlay.remove();
+      render();
+    });
+  };
+}
+
+function setActiveTabUI(){ document.querySelectorAll('nav.tabs button').forEach(b=>{ b.classList.toggle('active', b.dataset.tab===activeTab); }); }
+document.querySelectorAll('nav.tabs button').forEach(btn=>{ btn.onclick = ()=>{ activeTab = btn.dataset.tab; setActiveTabUI(); render(); }; });
+document.getElementById('fabAdd').onclick = ()=> openAddForm(null);
+
+/* ---------- Header Welle: Clipping-Mask Stil (Flache Füllung nach unten) ---------- */
+function buildGroovyWaves(){
+  const svg = document.getElementById('titleWaves');
+  if(!svg) return;
+  const W = 400, H = 120;
+
+  // Erzeugt eine schicke geschwungene Wellenkante oben, die nach unten hin flach komplett ausgefüllt ist
+  let d = `M -20 130 L -20 38`;
+  for (let x = -20; x <= W + 20; x += 15) {
+    const yWave = 38 + Math.sin((x / (W * 1.05)) * Math.PI) * 28;
+    d += ` L ${x} ${yWave.toFixed(2)}`;
+  }
+  d += ` L ${W + 20} 130 Z`;
+
+  // Nutzung des tieferen Moosgrüns (--moss) als gefüllter Wellenblock über dem helleren Header
+  svg.innerHTML = `
+    <path d="${d}" fill="var(--moss)" opacity="0.95"></path>
+  `;
+}
+buildGroovyWaves();
+
+/* ---------- Intelligentes Overlay Scroll-Verhalten ---------- */
+(function(){
+  const headerContainer = document.getElementById('headerContainer');
+  const stickySettings = document.getElementById('stickySettings');
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  
+  let lastY = window.scrollY || 0;
+
+  window.addEventListener('scroll', ()=>{
+    const currentY = window.scrollY || 0;
+    const isScrollingUp = currentY < lastY;
+
+    // 1. Zurück nach oben Button
+    if (currentY > 180) {
+      scrollTopBtn.classList.add('visible');
+    } else {
+      scrollTopBtn.classList.remove('visible');
+    }
+
+    // 2. Title Header Card
+    if (currentY <= 10) {
+      headerContainer.classList.remove('header-hidden');
+    } else {
+      headerContainer.classList.add('header-hidden');
+    }
+
+    // 3. Settings Overlay (Verschwindet beim Runterscrollen, taucht beim Hochscrollen Überall auf)
+    if (currentY <= 10) {
+      stickySettings.classList.remove('settings-hidden');
+    } else if (isScrollingUp) {
+      stickySettings.classList.remove('settings-hidden');
+    } else {
+      stickySettings.classList.add('settings-hidden');
+    }
+
+    lastY = currentY;
+  }, { passive: true });
+
+  scrollTopBtn.onclick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+})();
+
+loadData();
+</script>
+</body>
+</html>

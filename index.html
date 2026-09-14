@@ -31,13 +31,12 @@
     --d-tier: #ACAA98;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  
-  html, body{ 
-    overflow-x:hidden; 
-    width:100%; 
-    max-width:100%; 
-  }
-  
+
+  /* Beim Overscroll-Bounce oben zeigt iOS die html-Hintergrundfarbe statt Weiß —
+     hier die Header-Farbe, damit es aussieht als würde die Titel-Karte weitergezogen. */
+  html{ background:#8AA173; overflow-x:hidden; width:100%; max-width:100%; }
+  body{ overflow-x:hidden; width:100%; max-width:100%; }
+
   body{ margin:0; background:var(--paper); color:var(--ink); font-family:'Inter', sans-serif; -webkit-font-smoothing:antialiased; }
   h1,h2,h3, .display{ font-family:'Fraunces', serif; font-weight:700; margin:0; }
   #app{ max-width:640px; margin:0 auto; min-height:100vh; background:var(--paper); position:relative; }
@@ -105,7 +104,7 @@
   nav.tabs button.active{ color:#fff; background: linear-gradient(180deg, var(--moss) 0%, #3F5030 100%); box-shadow: 0 2px 6px rgba(75,93,58,0.3); }
 
   /* Main hat einen festen Hintergrund und z-index 3, damit es sich sanft über die Parallax-Teile schiebt */
-  main{ padding:14px 16px 100px; position:relative; z-index:3; background: var(--paper); }
+  main{ padding:14px 16px 100px; position:relative; z-index:1; background: var(--paper); }
 
   .card{ background:var(--paper-raised); border-radius:18px; padding:16px; margin-bottom:14px; box-shadow:0 4px 14px rgba(46,58,36,0.07); }
 
@@ -165,6 +164,12 @@
     background:#fff; width:170px;
   }
   .plus-add.open input[type=text]{ display:block; }
+  .plus-add .confirm-btn{
+    display:none; width:34px; height:34px; border-radius:12px; border:none;
+    background:var(--moss); color:#fff; font-size:16px; font-weight:700; cursor:pointer;
+    align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .plus-add.open .confirm-btn{ display:flex; }
 
   .star-block{ margin-bottom:10px; }
   .star-block .row-top{ display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:4px; }
@@ -327,7 +332,7 @@
   .manage-chip button{ background:none; border:none; color:var(--danger); font-size:15px; cursor:pointer; padding:0; }
 
   .overlay{ position:fixed; inset:0; background:rgba(38,43,31,0.6); backdrop-filter: blur(4px); z-index:40; display:flex; align-items:flex-end; justify-content:center; }
-  .sheet{ background:var(--paper); width:100%; max-width:640px; max-height:88vh; overflow-y:auto; border-radius:22px 22px 0 0; padding:18px; box-shadow: 0 -8px 30px rgba(0,0,0,0.2); }
+  .sheet{ background:var(--paper); width:100%; max-width:640px; max-height:88vh; overflow-y:auto; overscroll-behavior-y:contain; -webkit-overflow-scrolling:touch; border-radius:22px 22px 0 0; padding:18px; box-shadow: 0 -8px 30px rgba(0,0,0,0.2); }
   .sheet-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
   .sheet img.hero{ width:100%; height:180px; object-fit:cover; border-radius:16px; margin-bottom:14px; }
   .close-x{ background:none; border:none; font-size:22px; cursor:pointer; color:var(--ink-soft); line-height:1; }
@@ -336,6 +341,13 @@
   .confirm-box p{ font-size:14px; line-height:1.5; margin:0 0 16px; }
   .confirm-actions{ display:flex; gap:10px; }
   .confirm-actions .btn{ flex:1; }
+
+  .toast{
+    position:fixed; left:50%; bottom:96px; transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:11px 18px; border-radius:999px;
+    font-size:12.5px; z-index:200; box-shadow:0 6px 18px rgba(0,0,0,0.3);
+    max-width:86%; text-align:center; line-height:1.4;
+  }
 
   .fab{
     position:fixed; bottom:20px; right:50%; transform:translateX(320px);
@@ -415,15 +427,95 @@ const storageAdapter = {
     flagNoPersistence();
     return memoryFallback[key] || null;
   },
+  // Gibt jetzt true/false zurück, damit wir bei Fehlern warnen können statt Daten still zu verlieren.
   async set(key, value){
     if(typeof window.storage !== 'undefined' && window.storage){
-      try{ await window.storage.set(key, value); return; } catch(e){}
+      try{ await window.storage.set(key, value); return true; } catch(e){}
     }
-    try{ localStorage.setItem(key, value); return; } catch(e){}
+    try{ localStorage.setItem(key, value); return true; } catch(e){}
     flagNoPersistence();
     memoryFallback[key] = value;
+    return false;
   }
 };
+
+/* ---------- Toast (sichtbare Warnung statt stillem Datenverlust) ---------- */
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=> t.remove(), 3400);
+}
+
+/* ---------- Fotos: eigener IndexedDB-Speicher statt im JSON-Blob ----------
+   Grund: localStorage hat auf iOS Safari nur ~5MB insgesamt. Fotos als
+   Base64 im selben JSON-Objekt wie alle Getränke sprengen das schnell,
+   der Schreibvorgang schlägt dann still fehl. IndexedDB hat ein weit
+   größeres Kontingent und ist für Bilddaten gemacht. */
+const PHOTO_DB_NAME = 'fizzy-photos-db';
+function openPhotoDB(){
+  return new Promise((resolve, reject)=>{
+    if(!('indexedDB' in window)){ reject(new Error('IndexedDB nicht verfügbar')); return; }
+    const req = indexedDB.open(PHOTO_DB_NAME, 1);
+    req.onupgradeneeded = ()=>{ req.result.createObjectStore('photos'); };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+async function idbSetPhoto(id, dataUrl){
+  try{
+    const db = await openPhotoDB();
+    return await new Promise(resolve=>{
+      const tx = db.transaction('photos','readwrite');
+      tx.objectStore('photos').put(dataUrl, id);
+      tx.oncomplete = ()=> resolve(true);
+      tx.onerror = ()=> resolve(false);
+    });
+  }catch(e){ return false; }
+}
+async function idbGetPhoto(id){
+  try{
+    const db = await openPhotoDB();
+    return await new Promise(resolve=>{
+      const tx = db.transaction('photos','readonly');
+      const req = tx.objectStore('photos').get(id);
+      req.onsuccess = ()=> resolve(req.result || null);
+      req.onerror = ()=> resolve(null);
+    });
+  }catch(e){ return null; }
+}
+async function idbDeletePhoto(id){
+  try{
+    const db = await openPhotoDB();
+    return await new Promise(resolve=>{
+      const tx = db.transaction('photos','readwrite');
+      tx.objectStore('photos').delete(id);
+      tx.oncomplete = ()=> resolve(true);
+      tx.onerror = ()=> resolve(false);
+    });
+  }catch(e){ return false; }
+}
+
+/* Verkleinert Fotos vor dem Speichern (max. 1000px, JPEG) — deutlich kleinere Dateien */
+function compressImage(dataUrl, maxDim=1000, quality=0.75){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let { width, height } = img;
+      if(width > maxDim || height > maxDim){
+        if(width > height){ height = Math.round(height * (maxDim/width)); width = maxDim; }
+        else { width = Math.round(width * (maxDim/height)); height = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = ()=> resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
 
 const STORAGE_KEY = 'drinks';
 const CATEGORY_KEY = 'custom-categories';
@@ -463,9 +555,17 @@ async function loadData(){
     }];
     await saveDrinks();
   }
+  // Fotos liegen separat in IndexedDB — hier ans jeweilige Getränk anhängen.
+  await Promise.all(drinks.map(async dr => { dr.photo = await idbGetPhoto(dr.id); }));
   render();
 }
-async function saveDrinks(){ await storageAdapter.set(STORAGE_KEY, JSON.stringify(drinks)); }
+async function saveDrinks(){
+  // Fotos NIE mit ins JSON — die sprengen sonst das localStorage-Limit auf iOS.
+  const toStore = drinks.map(({photo, ...rest}) => rest);
+  const ok = await storageAdapter.set(STORAGE_KEY, JSON.stringify(toStore));
+  if(!ok) showToast('⚠️ Speichern fehlgeschlagen — Änderungen bleiben nur für diese Sitzung erhalten.');
+  return ok;
+}
 async function saveCategories(){ await storageAdapter.set(CATEGORY_KEY, JSON.stringify(categories)); }
 async function saveTags(){ await storageAdapter.set(TAG_KEY, JSON.stringify(tagsList)); }
 
@@ -554,6 +654,36 @@ function makeStarInput(container, initialValue, onChange, readonly){
   container.addEventListener('pointercancel', stopDrag);
 
   return { get: ()=>value };
+}
+
+/* ---------- Plus-Add: Eingabe + explizite Bestätigung ----------
+   Auf Android springt "Enter" bei manchen Tastaturen ins nächste Feld statt
+   zu übernehmen. Deshalb gibt es jetzt zusätzlich einen echten Bestätigen-
+   Button, der unabhängig von der Tastatur funktioniert. */
+function wirePlusAdd(wrap, onSubmit){
+  if(!wrap) return;
+  const btn = wrap.querySelector('.plus-btn');
+  const input = wrap.querySelector('input');
+  const confirmBtn = wrap.querySelector('.confirm-btn');
+  let submitting = false;
+  const submit = async ()=>{
+    if(submitting) return;
+    const v = input.value.trim();
+    if(v){ submitting = true; await onSubmit(v); submitting = false; }
+    input.value = '';
+    wrap.classList.remove('open');
+  };
+  btn.onclick = ()=>{ wrap.classList.add('open'); input.focus(); };
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); submit(); }
+  });
+  if(confirmBtn){
+    // pointerdown statt click: feuert vor dem blur-Event des Inputs
+    confirmBtn.addEventListener('pointerdown', e=>{ e.preventDefault(); submit(); });
+  }
+  input.addEventListener('blur', ()=>{
+    setTimeout(()=>{ if(!input.value) wrap.classList.remove('open'); }, 150);
+  });
 }
 
 /* ---------- Bestätigungs-Dialog ---------- */
@@ -916,16 +1046,18 @@ function openManageModal(){
         <div class="manage-section-title">Bewertungskategorien</div>
         <div class="manage-list" id="catList"></div>
         <div class="plus-add" id="catAdd">
-          <button class="plus-btn">+</button>
-          <input type="text" placeholder="Neue Kategorie + Enter">
+          <button class="plus-btn" type="button">+</button>
+          <input type="text" placeholder="Neue Kategorie">
+          <button class="confirm-btn" type="button">✓</button>
         </div>
       </div>
       <div class="card">
         <div class="manage-section-title">Tags</div>
         <div class="manage-list" id="tagList"></div>
         <div class="plus-add" id="tagAdd">
-          <button class="plus-btn">+</button>
-          <input type="text" placeholder="Neuer Tag + Enter">
+          <button class="plus-btn" type="button">+</button>
+          <input type="text" placeholder="Neuer Tag">
+          <button class="confirm-btn" type="button">✓</button>
         </div>
       </div>
     </div>
@@ -964,23 +1096,8 @@ function openManageModal(){
   }
   renderCatList(); renderTagList();
 
-  function wirePlusAdd(root, id, onSubmit){
-    const wrap = root.querySelector('#'+id);
-    const btn = wrap.querySelector('.plus-btn');
-    const input = wrap.querySelector('input');
-    btn.onclick = ()=>{ wrap.classList.add('open'); input.focus(); };
-    input.addEventListener('keypress', async e=>{
-      if(e.key==='Enter'){
-        e.preventDefault();
-        const v = input.value.trim();
-        if(v){ await onSubmit(v); }
-        input.value=''; wrap.classList.remove('open');
-      }
-    });
-    input.addEventListener('blur', ()=>{ if(!input.value) wrap.classList.remove('open'); });
-  }
-  wirePlusAdd(overlay, 'catAdd', async v=>{ if(!categories.includes(v)){ categories.push(v); await saveCategories(); renderCatList(); } });
-  wirePlusAdd(overlay, 'tagAdd', async v=>{ if(!tagsList.includes(v)){ tagsList.push(v); await saveTags(); renderTagList(); } });
+  wirePlusAdd(overlay.querySelector('#catAdd'), async v=>{ if(!categories.includes(v)){ categories.push(v); await saveCategories(); renderCatList(); } });
+  wirePlusAdd(overlay.querySelector('#tagAdd'), async v=>{ if(!tagsList.includes(v)){ tagsList.push(v); await saveTags(); renderTagList(); } });
 }
 
 /* ---------- Getränk hinzufügen / bearbeiten ---------- */
@@ -1001,7 +1118,7 @@ function openAddForm(existingDrink){
         <div class="photo-mini">
           <div id="photoPreview" class="${pendingPhoto ? '' : 'photo-placeholder'}">${pendingPhoto ? '' : '🥤'}</div>
           <button class="btn secondary small" id="pickPhotoBtn">Foto</button>
-          <input type="file" id="photoInput" accept="image/*">
+          <input type="file" id="photoInput" accept="image/*" capture="environment">
         </div>
         <div class="field name-field"><label>Name</label><input type="text" id="drinkName" placeholder="z.B. Fizzy-Drink" value="${isEdit ? esc(existingDrink.name) : ''}"></div>
       </div>
@@ -1016,8 +1133,9 @@ function openAddForm(existingDrink){
       <div id="customStars"></div>
       <div class="field" style="margin-top:6px;">
         <div class="plus-add" id="catAddInline">
-          <button class="plus-btn">+</button>
-          <input type="text" placeholder="Neue Kategorie + Enter">
+          <button class="plus-btn" type="button">+</button>
+          <input type="text" placeholder="Neue Kategorie">
+          <button class="confirm-btn" type="button">✓</button>
         </div>
       </div>
       <div class="field">
@@ -1048,24 +1166,14 @@ function openAddForm(existingDrink){
     const plusAdd = document.createElement('div');
     plusAdd.className = 'plus-add';
     plusAdd.id = 'tagAddInline';
-    plusAdd.innerHTML = `<button class="plus-btn" type="button">+</button><input type="text" placeholder="Neuer Tag + Enter">`;
+    plusAdd.innerHTML = `<button class="plus-btn" type="button">+</button><input type="text" placeholder="Neuer Tag"><button class="confirm-btn" type="button">✓</button>`;
     tagRow.appendChild(plusAdd);
-    const btn = plusAdd.querySelector('.plus-btn');
-    const input = plusAdd.querySelector('input');
-    btn.onclick = ()=>{ plusAdd.classList.add('open'); input.focus(); };
-    input.addEventListener('keypress', async e=>{
-      if(e.key==='Enter'){
-        e.preventDefault();
-        const v = input.value.trim();
-        if(v){
-          if(!tagsList.includes(v)) tagsList.push(v);
-          if(!selectedTags.includes(v)) selectedTags.push(v);
-          await saveTags();
-        }
-        renderTagChips();
-      }
+    wirePlusAdd(plusAdd, async v=>{
+      if(!tagsList.includes(v)) tagsList.push(v);
+      if(!selectedTags.includes(v)) selectedTags.push(v);
+      await saveTags();
+      renderTagChips();
     });
-    input.addEventListener('blur', ()=>{ if(!input.value) plusAdd.classList.remove('open'); });
   }
   renderTagChips();
 
@@ -1098,27 +1206,17 @@ function openAddForm(existingDrink){
   }
   renderCustomStars();
 
-  const catAddInline = overlay.querySelector('#catAddInline');
-  const catBtn = catAddInline.querySelector('.plus-btn');
-  const catInput = catAddInline.querySelector('input');
-  catBtn.onclick = ()=>{ catAddInline.classList.add('open'); catInput.focus(); };
-  catInput.addEventListener('keypress', async e=>{
-    if(e.key==='Enter'){
-      e.preventDefault();
-      const v = catInput.value.trim();
-      if(v && !categories.includes(v)){ categories.push(v); await saveCategories(); renderCustomStars(); }
-      catInput.value=''; catAddInline.classList.remove('open');
-    }
+  wirePlusAdd(overlay.querySelector('#catAddInline'), async v=>{
+    if(!categories.includes(v)){ categories.push(v); await saveCategories(); renderCustomStars(); }
   });
-  catInput.addEventListener('blur', ()=>{ if(!catInput.value) catAddInline.classList.remove('open'); });
 
   overlay.querySelector('#pickPhotoBtn').onclick = ()=> overlay.querySelector('#photoInput').click();
   overlay.querySelector('#photoInput').onchange = e=>{
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = ev=>{
-      pendingPhoto = ev.target.result;
+    reader.onload = async ev=>{
+      pendingPhoto = await compressImage(ev.target.result);
       overlay.querySelector('#photoPreview').outerHTML = `<img class="photo-thumb" id="photoPreview" src="${pendingPhoto}">`;
     };
     reader.readAsDataURL(file);
@@ -1157,6 +1255,13 @@ function openAddForm(existingDrink){
         photo: pendingPhoto, notes, count: 1, dateAdded: Date.now(), firstDrunkAt: Date.now()
       });
       newlyAddedDrinkId = targetId;
+    }
+
+    if(pendingPhoto){
+      const photoOk = await idbSetPhoto(targetId, pendingPhoto);
+      if(!photoOk) showToast('⚠️ Foto konnte nicht dauerhaft gespeichert werden (nur für diese Sitzung sichtbar).');
+    } else {
+      await idbDeletePhoto(targetId);
     }
     await saveDrinks();
 
@@ -1260,6 +1365,7 @@ function openDetail(id){
   overlay.querySelector('#deleteDrink').onclick = ()=>{
     confirmModal(`„${esc(d.name)}" wirklich endgültig löschen?`, 'Löschen', async ()=>{
       drinks = drinks.filter(x=>x.id!==id);
+      await idbDeletePhoto(id);
       await saveDrinks();
       overlay.remove();
       render();
@@ -1306,11 +1412,11 @@ buildGroovyWaves();
     }
 
     if (headerContainer) {
-      headerContainer.style.transform = `translateY(${y * -0.2}px)`;
+      headerContainer.style.transform = `translateY(${y * 0}px)`;
     }
     
     if (stickySettings) {
-      stickySettings.style.transform = `translateY(${y * -0.05}px)`;
+      stickySettings.style.transform = `translateY(${y * 0}px)`;
     }
     
   }, { passive: true });
@@ -1319,20 +1425,6 @@ buildGroovyWaves();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 })();
-
-// Prevent overscroll only at the top, leaving normal scrolling and bottom bounce intact
-let touchStartY = 0;
-window.addEventListener('touchstart', e => {
-  touchStartY = e.touches[0].clientY;
-}, { passive: true });
-
-window.addEventListener('touchmove', e => {
-  const touchY = e.touches[0].clientY;
-  const currentScroll = window.scrollY || window.pageYOffset;
-  if (currentScroll <= 0 && touchY > touchStartY) {
-    e.preventDefault();
-  }
-}, { passive: false });
 
 loadData();
 </script>

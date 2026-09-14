@@ -32,10 +32,12 @@
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 
-  /* Beim Overscroll-Bounce oben zeigt iOS die html-Hintergrundfarbe statt Weiß —
-     hier die Header-Farbe, damit es aussieht als würde die Titel-Karte weitergezogen. */
-  html{ background:#8AA173; overflow-x:hidden; width:100%; max-width:100%; }
-  body{ overflow-x:hidden; width:100%; max-width:100%; }
+  /* Overscroll-Bounce komplett deaktiviert — kein Rubber-Banding mehr,
+     dadurch auch keine Farbsprünge/Lücken beim Überziehen. */
+  html, body{
+    overflow-x:hidden; width:100%; max-width:100%;
+    overscroll-behavior-y: none;
+  }
 
   body{ margin:0; background:var(--paper); color:var(--ink); font-family:'Inter', sans-serif; -webkit-font-smoothing:antialiased; }
   h1,h2,h3, .display{ font-family:'Fraunces', serif; font-weight:700; margin:0; }
@@ -76,21 +78,6 @@
   header.top .head-text{ position:relative; z-index:1; max-width:88%; }
   header.top h1{ font-size:30px; letter-spacing:-0.01em; line-height: 1; color: #F1EFE4; text-shadow: 0 1px 2px rgba(255,255,255,0.2); }
   header.top p{ margin:4px 0 0; color:#F1EFE4; font-size:12.5px; font-weight: 500; opacity: 0.9; }
-
-.header-backing{
-  position: fixed;
-  top: calc(-1 * env(safe-area-inset-top, 0px));
-  left: 0; right: 0;
-  height: calc(100vh + env(safe-area-inset-top, 0px));
-  background: linear-gradient(180deg,
-    #8AA173 0%,
-    #8AA173 450px,
-    var(--paper) 450px,
-    var(--paper) 100%
-  );
-  z-index: 0;
-  pointer-events: none;
-}
 
   /* Back to top Button */
   .top-btn {
@@ -364,11 +351,6 @@
     max-width:86%; text-align:center; line-height:1.4;
   }
 
-  .bottom-spacer{
-  height: 100vh;
-  height: 100dvh;
-}
-
   .fab{
     position:fixed; bottom:20px; right:50%; transform:translateX(320px);
     background: linear-gradient(135deg, var(--rust) 0%, #A86027 100%);
@@ -404,8 +386,6 @@
 </head>
 <body>
 <div id="app">
-  <div class="header-backing"></div>
-
   <button class="top-btn" id="scrollTopBtn" aria-label="Zurück nach oben">↑</button>
 
   <div class="header-container" id="headerContainer">
@@ -427,7 +407,6 @@
   </div>
 
   <main id="main"></main>
-  <div class="bottom-spacer" aria-hidden="true"></div>
   <button class="fab" id="fabAdd">+</button>
 </div>
 
